@@ -1,8 +1,8 @@
 package cli
 
 import (
+    "github.com/davbizz/go-syng/lib/config"
     "log"
-    "../config"
 )
 
 func RunSync(configFile string) {
@@ -13,9 +13,11 @@ func RunSync(configFile string) {
             log.Fatal(err)
         }
 
+        // Directives
+        // ----------
+        
         done := make(chan bool)
-        cErr := make(chan error)
-        closeWatcher := make(chan bool)
+        errc := make(chan error)
 
         openWatcher := 0
         for n, directive := range conf.Directives {
@@ -26,19 +28,24 @@ func RunSync(configFile string) {
                 continue;
             }
 
-            go directive.RunWatcher(closeWatcher, cErr)
+            go directive.RunWatcher(done, errc)
             openWatcher++
         }
 
+        // Config
+        // ------
+        
         // Run a special watcher on
-        go watchConfigFile()
+        w := &config.ConfigWatcher{File:configFile}
+        go w.Watch();
 
         for {
             select {
-            case err := <-cErr:
+            case err := <-w.Errc:
                 log.Fatalf("[-] Error on running directive: %s\n", err)
-            case <-done:
-                return
+            case <-w.Change:
+                done <- true; // Send close signal to all watcher
+                break; // Reload the config file
             }
         }
     }

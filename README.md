@@ -1,4 +1,4 @@
-# Nesyc
+# Syng
 
 ## Todos
 

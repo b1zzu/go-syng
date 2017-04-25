@@ -1,11 +1,11 @@
 package utils
 
 import (
-    "path/filepath"
     "os"
     "io"
-    "io/ioutil"
+    "path/filepath"
     "errors"
+    "io/ioutil"
 )
 
 // CopyFile copies the contents of the file named src to the file named

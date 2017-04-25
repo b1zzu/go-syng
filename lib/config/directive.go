@@ -1,13 +1,13 @@
 package config
 
 import (
-    "path/filepath"
+    "github.com/davbizz/go-syng/lib/utils"
     "log"
-    "path"
-    "../utils"
+    "errors"
     "strings"
     "os/exec"
-    "errors"
+    "path"
+    "path/filepath"
     "os"
     "github.com/fsnotify/fsnotify"
 )

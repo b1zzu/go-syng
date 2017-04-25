@@ -1,10 +1,10 @@
 package main
 
 import (
-    "./cli"
+    "github.com/davbizz/go-syng/lib/cli"
 )
 
-const ConfigFile string = "./nesync.yaml"
+const ConfigFile string = "./syng.yaml"
 
 func main() {
 
