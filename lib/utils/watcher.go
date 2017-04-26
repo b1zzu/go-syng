@@ -4,6 +4,7 @@ import (
     "github.com/fsnotify/fsnotify"
     "path/filepath"
     "os"
+    "log"
 )
 
 func RecursiveNewWatcher(directory string) (*fsnotify.Watcher, error) {
@@ -13,6 +14,14 @@ func RecursiveNewWatcher(directory string) (*fsnotify.Watcher, error) {
         return nil, err;
     }
 
+    // Firs add the main directory
+    err = watcher.Add(directory)
+    if err != nil {
+        return nil, err;
+    }
+    log.Printf("Added directory %s to watcher", directory)
+    
+    // Walk trough all subdirectory and add them
     err = filepath.Walk(
         directory,
         func(fileName string, fileInfo os.FileInfo, err error) (error) {
@@ -26,6 +35,7 @@ func RecursiveNewWatcher(directory string) (*fsnotify.Watcher, error) {
                 if err != nil {
                     return err
                 }
+                log.Printf("Added directory %s to watcher", fileName)
 
             }
 

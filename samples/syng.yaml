@@ -8,11 +8,11 @@ directives:
 
   # NetEye API
   - src: src/neteye-api/NetEye
-    dest: /var/lib/neteye/API/NetEye
+    dest: /var/lib/neteye/API/perl/NetEye
     
   # Monarch
-  - src: src/monarch
-    dest: /var/lib/neteye/monarch
+#  - src: src/monarch
+#    dest: /var/lib/neteye/monarch
 #    sh: | # All command are executed inside the dest dir after copy the files
 #        monarch_dir="/var/lib/neteye/monarch"
 #        monarch_web="$monarch_dir/htdocs"
@@ -41,7 +41,7 @@ directives:
 #        chmod +x cgi-bin/*
           
   # API
-  - src: src/cgi
-    dest: /var/lib/neteye/cgi-bin
-    sh: chmod +x *
+#  - src: src/cgi
+#    dest: /var/lib/neteye/cgi-bin
+#    sh: chmod +x *
 

@@ -7,7 +7,5 @@ import (
 const ConfigFile string = "./syng.yaml"
 
 func main() {
-
     cli.RunSync(ConfigFile)
-   
 }

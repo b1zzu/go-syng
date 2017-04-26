@@ -1,121 +1,27 @@
 package config
 
 import (
-    "github.com/davbizz/go-syng/lib/utils"
     "log"
-    "errors"
-    "strings"
-    "os/exec"
-    "path"
-    "path/filepath"
-    "os"
-    "github.com/fsnotify/fsnotify"
+    "fmt"
+    "github.com/radovskyb/watcher"
+    "time"
 )
 
 type Directive struct {
     Src, Dest, Sh string
+    N             int
 }
 
-func (directive *Directive)Execute() (error) {
-
-    err := directive.SyncFiles("")
-    if err != nil {
-        return err;
-    }
-
-    if directive.Sh != "" {
-
-        err := directive.RunShell()
-        if err != nil {
-            log.Fatal(err);
-        }
-    }
-
-    return nil
+type DirectiveEvent struct {
+    Event watcher.Event
 }
 
-func (directive *Directive)RunShell() (error) {
-
-    if directive.Sh == "" {
-        return errors.New("Impossible to run empty shell command!")
-    }
-
-    // Iterate over every new line
-    for _, line := range strings.Split(directive.Sh, "\n") {
-
-        // Skip if empty line
-        if line == "" {
-            continue;
-        }
-
-        err := runShellLine(directive.Dest, line)
-        if err != nil {
-            return err;
-        }
-    }
-
-    return nil
-}
-
-func runShellLine(directory, line string) (error) {
-
-    if line == "" {
-        return errors.New("Impossible to run empty shell command!")
-    }
-
-    // Get the command to execute dived by args
-    args := strings.Split(line, " ")
-
-    // Execute every command in path
-    cmd := exec.Command(args[0], args[1:]...)
-    cmd.Dir = directory
-
-    err := cmd.Run()
-    if err != nil {
-        return err
-    }
-
-    return nil
-}
-
-func (directive *Directive)SyncFiles(file string) (error) {
-
-    source := directive.Src;
-    destination := directive.Dest;
-
-    if file != "" {
-        source = path.Join(source, file)
-        destination = path.Join(source, destination)
-    }
-
-    isDir, err := utils.IsDir(source);
-    if err != nil {
-        return err
-    }
-    
-    if isDir {
-
-        err := utils.CopyDir(source, destination)
-        if err != nil {
-            return err
-        }
-
-    } else {
-
-        err := utils.CopyFile(source, destination)
-        if err != nil {
-            return err
-        }
-
-    }
-
-    return nil
-}
-
+// Validate and improve directive structure
+//
 func (directive *Directive)Validate() (error) {
 
     // Convert source path
-    err := directive.convertSrcToAbsolute()
+    err := directive.validateSrc()
     if err != nil {
         return err;
     }
@@ -123,80 +29,82 @@ func (directive *Directive)Validate() (error) {
     return nil;
 }
 
-func (directive *Directive)convertSrcToAbsolute() (error) {
+// First execution
+//
+func (directive *Directive)Execute() (error) {
 
-    absolute, err := filepath.Abs(directive.Src)
-    if err != nil {
-        return err
-    }
-
-    directive.Src = absolute;
-
-    return nil;
-}
-
-func (directive *Directive)RunWatcher(closeWatcher chan bool, cErr chan error) {
-    err := directive.runWatcher(closeWatcher)
-    if err != nil {
-        cErr <- err;
-    }
-}
-
-// Execute in async
-func (directive *Directive)runWatcher(closeWatcher chan bool) (error) {
-
-    watcher, err := utils.RecursiveNewWatcher(directive.Src)
-    if err != nil {
-        return err
-    }
-    defer watcher.Close()
-
-    for {
-        select {
-        case event := <-watcher.Events:
-            if event.Op == fsnotify.Write || event.Op == fsnotify.Create {
-                
-                // Execute the directive for the triggered event
-                err := directive.ExecuteEvent(event)
-                if err != nil {
-                    return err;
-                }
-                
-                // If has been created a directory then add it to the watcher
-                sourceInfo, _ := os.Stat(event.Name)
-                if event.Op == fsnotify.Create && sourceInfo.IsDir() {
-                    watcher.Add(event.Name)
-                    if err != nil {
-                        return err
-                    }
-                }
-                
-            }
-        case err := <-watcher.Errors:
-            return err;
-        case <-closeWatcher:
-            return nil
-        }
-    }
-
-}
-
-func (directive *Directive)ExecuteEvent(event fsnotify.Event)(error) {
-
-    file := strings.TrimLeft(event.Name, directive.Src);
-
-    err := directive.SyncFiles(file)
+    err := directive.executeSync()
     if err != nil {
         return err;
-    }
-
-    if directive.Sh != "" {
-
-        err := directive.RunShell()
-        if err != nil {
-            return err;
-        }
+    }     
+    
+    err = directive.executeSh()
+    if err != nil {
+        return err;
     }
 
     return nil
 }
+
+// Watch for file changes
+//
+func (d *Directive)Watch(done chan struct{}, errc chan error) {
+
+    w := watcher.New();
+
+    err := w.AddRecursive(d.Src)
+    if err != nil {
+        errc <- err;
+    }
+
+    fmt.Printf("[i] Watcher created for direcrive %d\n", d.N)
+
+    go func() {
+        for {
+            log.Printf("Loop in event watch directive %d", d.N)
+            select {
+            case event := <-w.Event:
+                log.Printf("Triggered event %s of directive %d\n", event.Op, d.N)
+
+                err := d.Event(event)
+                if err != nil {
+                    errc <- err
+                }
+            case err := <-w.Error:
+                log.Printf("Error in directive %d", d.N)
+                errc <- err
+            case <-w.Closed:
+                fmt.Printf("[i] Close direcrive %d\n", d.N)
+                return
+            case <-done:
+                w.Close();
+                return
+            }
+        }
+    }()
+
+    err = w.Start(time.Millisecond * 100)
+    if err != nil {
+        errc <- err;
+    }
+}
+
+// Execute on every change
+//
+func (directive *Directive)Event(event watcher.Event) (error) {
+    
+    log.Println("Running events")
+    
+    err := directive.eventSync(event)
+    if err != nil {
+        return err;
+    }
+
+    err = directive.eventSh(event)
+    if err != nil {
+        return err;
+    }
+
+    return nil
+}
+
