@@ -2,13 +2,15 @@
 
 ## Todos
 
+* Pass the config file as param or the directory where is place
+* Give a name to the directive (Name should has multiple sections like monarch/api)
 * Allow to set excluded file in directive
 * Multiple directive sharing same start and end directory ( Maybe global variables )
 
 ## Bugs
 
-* If same file in multiple directive it will be updated only one and not both
-* Watcher on single file doesn't work
+* Shell script ( To test )
+* Watcher on single file does not work ( To test with new version )
 
 ## Build
 
