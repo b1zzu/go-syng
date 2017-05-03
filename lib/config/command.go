@@ -17,7 +17,8 @@ func (directive *Directive)executeSync() (error) {
 
     src := directive.Src
     dest := directive.Dest
-
+    log.Println("Sync files from: ", src, " to: ", dest, " for directive: ", directive.N)
+    
     return utils.Sync(src, dest)
 }
 
@@ -48,6 +49,7 @@ func (d *Directive)eventSync(e watcher.Event) (error) {
 
 func (directive *Directive)executeSh() (error) {
 
+    log.Println("Run shell for directive: ", directive.N)
     if directive.Sh == "" {
         return nil
     }
@@ -82,8 +84,12 @@ func runShellLine(directory, line string) (error) {
     cmd := exec.Command(args[0], args[1:]...)
     cmd.Dir = directory
 
+    log.Println("Executing Line: ", line, " in: ", directory )
     out, err := cmd.Output()
     if err != nil {
+        if ee, ok := err.(*exec.ExitError); ok {
+            log.Println("Stderr: ", string(ee.Stderr))
+        }
         return err
     }
     

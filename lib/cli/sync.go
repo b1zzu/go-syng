@@ -53,19 +53,20 @@ func RunConfig(c config.Config, done chan struct{}) {
     
     errc := make(chan error)
     donew := make(chan struct{})
-    //defer close(donew)
     
     for n, d := range c.Directives {
         
+        log.Println("Loop inside directive: ", n+1)
         d.N = n+1;
 
         err := d.Execute()
         if err != nil {
-            log.Fatalf("[-] Error with %d direcive. Error: %s\n", d.N, err)
+            log.Fatalf("[-] Error with direcive: %d. Error: %s\n", d.N, err)
             continue;
         }
         fmt.Printf("[i] Executed directive: %d\n", d.N)
 
+        log.Println("Start watcher for directive: ", d.N)
         go d.Watch(donew, errc)
     }
     
