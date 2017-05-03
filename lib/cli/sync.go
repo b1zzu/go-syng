@@ -9,38 +9,44 @@ import (
 func RunSync(configFile string) {
     
     for {
-        conf, err := config.LoadConfiguration(configFile)
-        if err != nil {
-            log.Fatalf("[-] Error during loading of configuration: %s\n", err)
-        }
-        fmt.Println("[i] Yaml config loaded!")
+        runSync(configFile)
+    }
+}
+
+func runSync(configFile string) {
+
+    conf, err := config.LoadConfiguration(configFile)
+    if err != nil {
+        log.Fatalf("[-] Error during loading of configuration: %s\n", err)
+    }
+    fmt.Println("[i] Yaml config loaded!")
 
 
-        log.Println(conf)
+    log.Println(conf)
 
-        // Directives
-        // ----------
-        
-        done := make(chan struct{})
-        RunConfig(conf, done)
+    // Directives
+    // ----------
 
-        // Config
-        // ------
-        
-        // Run a special watcher on
-        w := &config.ConfigWatcher{File:configFile}
-        go w.Watch();
+    done := make(chan struct{})
+    RunConfig(conf, done)
 
-        for {
-            select {
-            case err := <-w.Errc:
-                log.Fatalf("[-] Error on config file watching: %s\n", err)
-            case <-w.Change:
-                close(done); // Send close signal to all watcher
-                break; // Reload the config file
-            }
+    // Config
+    // ------
+
+    // Run a special watcher on
+    w := config.NewConfigWatcher(configFile)
+    go w.Watch()
+
+    for {
+        select {
+        case err := <-w.Errc:
+            log.Fatalf("[-] Error on config file watching: %s\n", err)
+        case <-w.Change:
+            close(done) // Send close signal to all watcher
+            return;      // Reload the config file
         }
     }
+    
 }
 
 func RunConfig(c config.Config, done chan struct{}) {

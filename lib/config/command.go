@@ -82,10 +82,12 @@ func runShellLine(directory, line string) (error) {
     cmd := exec.Command(args[0], args[1:]...)
     cmd.Dir = directory
 
-    err := cmd.Run()
+    out, err := cmd.Output()
     if err != nil {
         return err
     }
+    
+    log.Println("Shell: ", string(out))
 
     return nil
 }

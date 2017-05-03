@@ -3,20 +3,15 @@ package config
 import (
     "io/ioutil"
     "gopkg.in/yaml.v2"
-    "github.com/fsnotify/fsnotify"
     "log"
+    "fmt"
+    "time"
+    "github.com/radovskyb/watcher"
 )
 
 type Config struct {
     Directives    []Directive
     directivesLen int
-}
-
-type ConfigWatcher struct {
-    File   string
-    Change chan bool
-    Errc   chan error
-    Done   chan bool
 }
 
 func LoadConfiguration(file string) (Config, error) {
@@ -79,32 +74,55 @@ func (conf *Config)Validate() (error) {
     return nil;
 }
 
-func (w *ConfigWatcher)Watch() {
+type ConfigWatcher struct {
+    File   string
+    Change chan bool
+    Errc   chan error
+    Done   chan bool
+}
 
-    watcher, err := fsnotify.NewWatcher()
-    if err != nil {
-        w.Errc <- err
+func NewConfigWatcher(file string)(*ConfigWatcher) {
+    return &ConfigWatcher{
+        File: file,
+        Change: make(chan bool),
+        Errc: make(chan error),
+        Done: make(chan bool),
     }
-    defer watcher.Close()
+}
 
-    err = watcher.Add(w.File)
+func (cw *ConfigWatcher)Watch() {
+
+    w := watcher.New();
+
+    err := w.Add(cw.File)
     if err != nil {
-        w.Errc <- err
+        cw.Errc <- err;
     }
 
-    for {
-        select {
-        case event := <-watcher.Events:
-            if event.Op == fsnotify.Write || event.Op == fsnotify.Create {
-                w.Change <- true
+    fmt.Println("[i] Watcher created for config file")
+
+    go func() {
+        for {
+
+            select {
+            case e := <-w.Event:
+                if e.Op == watcher.Write || e.Op == watcher.Create {
+                    log.Println("Cange to config file detected!")
+                    cw.Change <- true
+                    return;
+                }
+            case err := <-w.Error:
+                cw.Errc <- err;
+                return;
+            case <-cw.Done:
                 return;
             }
-        case err := <-watcher.Errors:
-            w.Errc <- err;
-            return;
-        case <-w.Done:
-            return;
         }
+    }()
+
+    err = w.Start(time.Millisecond * 1000)
+    if err != nil {
+        cw.Errc <- err;
     }
 }
 
