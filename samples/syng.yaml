@@ -1,5 +1,5 @@
 ---
-# Path are relative to project home
+# Path are relative to config file directory
 
 # List of files/directory to be synced
 # Dest path/file is backup before sync to restore use `nesync restore`
@@ -11,37 +11,39 @@ directives:
     dest: /var/lib/neteye/API/perl/NetEye
     
   # Monarch
-#  - src: src/monarch
-#    dest: /var/lib/neteye/monarch
-#    sh: | # All command are executed inside the dest dir after copy the files
-#        monarch_dir="/var/lib/neteye/monarch"
-#        monarch_web="$monarch_dir/htdocs"
-#        monarch_url="/monarch"
-#        monarch_dbhost="localhost"
-#        monarch_dbname="monarch"
-#        monarch_dbuser="root"
-#        monarch_dbpass=""
-#        nagios_etc="/etc/nagios"
-#        nagios_var="/var/log/nagios"
-#        cacti_dir="/var/lib/neteye/cacti/html"
-#        nedi_dir="/var/lib/neteye/nedi/html"
-#        api_dir="/var/lib/neteye/API/perl"
-#        find . -type f -exec sed \
-#            -e "s#@MONARCH_HOME@#${monarch_dir}#g" \
-#            -e "s#@MONARCH_WEB@#$monarch_web#g" \
-#            -e "s#@MONARCH_URL@#$monarch_url#g" \
-#            -e "s#@MONARCH_DBHOST@#$monarch_dbhost#g" \
-#            -e "s#@MONARCH_DBNAME@#$monarch_dbname#g" \
-#            -e "s#@MONARCH_DBUSER@#$monarch_dbuser#g" \
-#            -e "s#@NAGIOS_ETC@#$nagios_etc#g" \
-#            -e "s#@NAGIOS_VAR@#$nagios_var#g" \
-#            -e "s#@MONARCH_DBPASS@#$monarch_dbpass#g" \
-#            -e "s#@CACTI_DIR@#$cacti_dir#g" \
-#            -e "s#@NEDI_DIR@#$nedi_dir#g" -i '{}' \;
-#        chmod +x cgi-bin/*
+  - src: src/monarch
+    dest: /var/lib/neteye/monarch
+    sh: | # All command are executed inside the dest dir after copy the files
+        monarch_dir="/var/lib/neteye/monarch"
+        monarch_web="$monarch_dir/htdocs"
+        monarch_url="/monarch"
+        monarch_dbhost="localhost"
+        monarch_dbname="monarch"
+        monarch_dbuser="root"
+        monarch_dbpass=""
+        nagios_etc="/etc/nagios"
+        nagios_var="/var/log/nagios"
+        cacti_dir="/var/lib/neteye/cacti/html"
+        nedi_dir="/var/lib/neteye/nedi/html"
+        api_dir="/var/lib/neteye/API/perl"
+        find . -type f -exec sed \
+            -e "s#@MONARCH_HOME@#${monarch_dir}#g" \
+            -e "s#@MONARCH_WEB@#$monarch_web#g" \
+            -e "s#@MONARCH_URL@#$monarch_url#g" \
+            -e "s#@MONARCH_DBHOST@#$monarch_dbhost#g" \
+            -e "s#@MONARCH_DBNAME@#$monarch_dbname#g" \
+            -e "s#@MONARCH_DBUSER@#$monarch_dbuser#g" \
+            -e "s#@NAGIOS_ETC@#$nagios_etc#g" \
+            -e "s#@NAGIOS_VAR@#$nagios_var#g" \
+            -e "s#@MONARCH_DBPASS@#$monarch_dbpass#g" \
+            -e "s#@CACTI_DIR@#$cacti_dir#g" \
+            -e "s#@NEDI_DIR@#$nedi_dir#g" -i '{}' \;
+        chmod +x cgi-bin/*
           
   # API
-#  - src: src/cgi
-#    dest: /var/lib/neteye/cgi-bin
-#    sh: chmod +x *
+  - src: src/cgi
+    dest: /var/lib/neteye/cgi-bin
+    sh: |
+      variable="Hello"
+      echo "$variable World!"
 
