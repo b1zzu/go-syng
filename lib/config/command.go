@@ -77,11 +77,8 @@ func (d *Directive)eventSh(e watcher.Event) (error) {
 
 func runShellLine(directory, line string) (error) {
 
-    // Get the command to execute dived by args
-    args := strings.Split(line, " ")
-
     // Execute every command in path
-    cmd := exec.Command(args[0], args[1:]...)
+    cmd := exec.Command("/bin/sh", "-c", line)
     cmd.Dir = directory
 
     log.Println("Executing Line: ", line, " in: ", directory )
