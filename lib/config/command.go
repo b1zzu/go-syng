@@ -47,41 +47,18 @@ func (d *Directive)eventSync(e watcher.Event) (error) {
 // Sh
 // ==
 
-func (directive *Directive)executeSh() (error) {
+func (d *Directive)executeSh() (error) {
 
-    log.Println("Run shell for directive: ", directive.N)
-    if directive.Sh == "" {
+    log.Println("Run shell for directive: ", d.N)
+    if d.Sh == "" {
         return nil
     }
 
-    // Iterate over every new line
-    for _, line := range strings.Split(directive.Sh, "\n") {
-
-        // Skip if empty line
-        if line == "" {
-            continue;
-        }
-
-        err := runShellLine(directive.Dest, line)
-        if err != nil {
-            return err
-        }
-    }
-
-    return nil
-}
-
-func (d *Directive)eventSh(e watcher.Event) (error) {
-    return d.executeSh()
-}
-
-func runShellLine(directory, line string) (error) {
-
     // Execute every command in path
-    cmd := exec.Command("/bin/sh", "-c", line)
-    cmd.Dir = directory
+    cmd := exec.Command("/bin/sh", "-c", d.Sh)
+    cmd.Dir = d.Dest
 
-    log.Println("Executing Line: ", line, " in: ", directory )
+    log.Println("Executing Line: ", d.Sh, " in: ", d.Dest )
     out, err := cmd.Output()
     if err != nil {
         if ee, ok := err.(*exec.ExitError); ok {
@@ -89,8 +66,12 @@ func runShellLine(directory, line string) (error) {
         }
         return err
     }
-    
+
     log.Println("Shell: ", string(out))
 
     return nil
+}
+
+func (d *Directive)eventSh(e watcher.Event) (error) {
+    return d.executeSh()
 }
